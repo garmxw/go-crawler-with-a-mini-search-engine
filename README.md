@@ -1,0 +1,128 @@
+1. The predected project structure :
+   my-search-engine/
+   │── go.mod
+   │ # Defines the Go module (project name + dependencies)
+   │
+   │── go.sum
+   │ # Stores checksums of dependencies (auto-generated for security/integrity)
+   │
+   ├── cmd/
+   │ # Entry points (each folder = separate executable program)
+   │
+   │ ├── crawler/
+   │ │ └── main.go
+   │ │ # Starts the crawler service
+   │ │ # Responsible for fetching web pages and sending them to the queue
+   │ │
+   │ ├── indexer/
+   │ │ └── main.go
+   │ │ # Starts the indexing worker
+   │ │ # Consumes crawled pages and builds the search index
+   │ │
+   │ ├── api/
+   │ │ └── main.go
+   │ │ # Starts the HTTP API server
+   │ │ # Exposes endpoints like /search?q=...
+   │
+   ├── internal/
+   │ # Core application logic (private to this project, cannot be imported externally)
+   │
+   │ ├── crawler/
+   │ │ # Handles everything related to crawling the web
+   │ │
+   │ │ ├── fetcher.go
+   │ │ │ # Sends HTTP requests to fetch web pages
+   │ │ │ # Handles timeouts, headers, retries
+   │ │
+   │ │ ├── parser.go
+   │ │ │ # Parses HTML content
+   │ │ │ # Extracts links, titles, and text from pages
+   │ │
+   │ │ ├── scheduler.go
+   │ │ # Decides which URLs to crawl next
+   │ │ # Prevents duplicates and manages crawl queue
+   │
+   │ ├── indexer/
+   │ │ # Responsible for transforming raw data into a searchable format
+   │ │
+   │ │ ├── indexer.go
+   │ │ │ # Builds the search index (e.g., inverted index)
+   │ │ │ # Maps words → documents
+   │ │
+   │ │ ├── tokenizer.go
+   │ │ # Splits text into tokens (words)
+   │ │ # Handles normalization (lowercase, removing punctuation, etc.)
+   │
+   │ ├── search/
+   │ │ # Handles search queries and ranking results
+   │ │
+   │ │ ├── engine.go
+   │ │ │ # Main search logic
+   │ │ │ # Takes query input and returns matching documents
+   │ │
+   │ │ ├── ranking.go
+   │ │ # Ranks results based on relevance
+   │ │ # Example: keyword frequency, scoring algorithms
+   │
+   │ ├── storage/
+   │ │ # Data persistence layer (database or file system)
+   │ │
+   │ │ ├── db.go
+   │ │ │ # Handles database connection and queries
+   │ │ │ # Abstracts storage implementation (Postgres, files, etc.)
+   │ │
+   │ │ ├── models.go
+   │ │ # Defines data structures (Page, Document, Index, etc.)
+   │
+   │ ├── queue/
+   │ │ # Communication layer between components (crawler → indexer)
+   │ │
+   │ │ └── queue.go
+   │ │ # Implements job queue
+   │ │ # Could use Go channels (simple) or external systems like Redis/Kafka
+   │
+   ├── pkg/
+   │ # Reusable utilities (can be used outside this project if needed)
+   │
+   │ ├── httpclient/
+   │ │ # Custom HTTP client wrapper
+   │ │ # Adds retries, headers, logging, etc.
+   │ │
+   │ ├── logger/
+   │ # Logging utility
+   │ # Standardized logs (info, error, debug)
+   │
+   ├── configs/
+   │ # Application configuration
+   │
+   │ └── config.go
+   │ # Loads environment variables and config settings
+   │ # Example: DB URL, API port, crawl limits
+
+2. the db structure :
+   -- 1. Store the actual pages
+   CREATE TABLE documents (
+   id SERIAL PRIMARY KEY,
+   url TEXT UNIQUE,
+   title TEXT,
+   body TEXT,
+   indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+
+   -- 2. Store every unique word (Term) found across the web
+   CREATE TABLE terms (
+   id SERIAL PRIMARY KEY,
+   word TEXT UNIQUE,
+   idf_score FLOAT8 DEFAULT 0 -- We update this after every crawl session
+   );
+
+   -- 3. The Inverted Index: Links words to documents with their Frequency (TF)
+   CREATE TABLE inverted_index (
+   term_id INTEGER REFERENCES terms(id),
+   doc_id INTEGER REFERENCES documents(id),
+   tf_score FLOAT8,
+   PRIMARY KEY (term_id, doc_id)
+   );
+
+   -- Indexing for speed
+   CREATE INDEX idx_terms_word ON terms(word);

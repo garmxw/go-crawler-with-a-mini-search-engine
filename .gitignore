@@ -1,0 +1,42 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.out
+*.test
+
+# Go build artifacts
+*.o
+*.a
+
+# Dependency directory (optional if using modules properly)
+vendor/
+
+# Go modules cache (DO NOT COMMIT)
+go.sum
+
+# Environment files (VERY IMPORTANT)
+.env
+.env.*
+config.yaml
+config.json
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Docker (optional cleanup)
+*.pid
+
+# Temporary crawler data
+data/
+tmp/
+cache/
