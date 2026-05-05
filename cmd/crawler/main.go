@@ -97,5 +97,5 @@ func main () {
 	// start crawling
 	slog.Info("Crawling started ...")
 	slog.Info("Crawling depth:", "depth" ,*depthFlag)
-	f.Fetch("https://example.com")
+	f.Start()
 }
