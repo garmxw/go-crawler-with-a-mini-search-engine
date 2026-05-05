@@ -41,3 +41,13 @@ func (s *Scheduler) IsVisited(url string) bool {
 	defer s.mu.Unlock()
 	return s.visited[url]
 }
+
+func (s *Scheduler) IsEmpty() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.queue) == 0
+}
+
+func (s *Scheduler) Close() {
+	close(s.queue)
+}
