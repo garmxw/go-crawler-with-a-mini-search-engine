@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 
@@ -12,7 +13,9 @@ type Page struct {
 	ID int
 	URL string
 	Title string
+	Date time.Time
 	Text string
+
 }
 
 type Storage struct {

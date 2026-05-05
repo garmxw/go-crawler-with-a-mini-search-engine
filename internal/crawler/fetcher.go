@@ -90,6 +90,7 @@ func (f *Fetcher) registerCallbacks() {
 		id := f.storage.SavePage(storage.Page{
 			URL: page.URL,
 			Title: page.Title,
+			Date: time.Now(),
 			Text: page.Text,
 		})
 

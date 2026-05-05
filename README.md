@@ -142,5 +142,6 @@ the json will be like this :
 "ID": 1,
 "URL": "https://example.com",
 "Title": "Example Domain",
+"Date": "(2024-05-20T10:00:00Z)",
 "Text": "This domain is for use in illustrative examples..."
 }
