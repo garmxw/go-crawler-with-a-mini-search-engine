@@ -22,7 +22,8 @@ func ParserPage (e *colly.HTMLElement) Page {
 	//links
 	e.ForEach("a[href]", func(_ int, el *colly.HTMLElement){
 		link := el.Attr("href")
-		if strings.HasPrefix(link, "http") {
+		//filter out javascript links and non-http links
+		if strings.HasPrefix(link, "http") && !strings.Contains(link, "javascript:") {
 			page.Links = append(page.Links, link)
 		}
 	})

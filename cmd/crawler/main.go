@@ -13,6 +13,33 @@ import (
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/crawler"
 )
 
+// custom flag type for multi-value flags
+type multiFlag []string
+
+func (m *multiFlag) String() string {
+	return ""
+}
+
+func (m *multiFlag) Set(value string) error {
+	*m = append(*m, value)
+	return nil
+}
+
+func ReadJSON(filename string) ([]string, error) {
+	file, err := os.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+
+		var data struct {
+			URLs []string `json:"urls"`
+		}
+
+		err = json.Unmarshal(file, &data)
+		return data.URLs, err
+}
+
+
 func readURLsFromFile(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -23,11 +50,7 @@ func readURLsFromFile(filename string) ([]string, error) {
 	//check the extension
 	ext := strings.ToLower(filepath.Ext(filename))
 	if ext == ".json"{
-		var urls []string
-		if err := json.NewDecoder(file).Decode(&urls); err != nil {
-			return nil, err
-		}
-		return urls, nil
+		return ReadJSON(filename)
 	}
 	if ext == ".txt" {
 		var urls []string
@@ -53,13 +76,17 @@ func main () {
 		slog.Error("Error: CrawlerDelay is not a valid value")
 	}
 	//flags
-	urlsFlag := flag.String("urls", "", "URLs to crawl")
-	fileFlag := flag.String("file", "", "File containing URLs to crawl (txt || json)")
+	var urls multiFlag
+	flag.Var(&urls, "url", "Add URL (can be used multiple times)")
+	fileFlag := flag.String("file", "", "File containing URLs to crawl")
+	// example json {"urls": ["https://example.com", "https://example.org"]}
+	jsonFlag := flag.String("json", "", "JSON file with URLs")
 	depthFlag := flag.Int("depth", 3, "Depth of the crawl")
+	maxPageFlag := flag.Int("maxPages", 0, "Maximum number of pages to crawl")
 
 	flag.Parse()
 
-	if *urlsFlag == "" && *fileFlag == "" {
+	if len(urls) == 0 && *fileFlag == "" {
 		slog.Error("Error: No URLs provided")
 		return
 	}
@@ -68,20 +95,30 @@ func main () {
 		*depthFlag = 3
 	}
 
-	// create a schedular
-	schedular := crawler.NewScheduler(100)
-
-	urls := []string{}
-	if *urlsFlag != "" {
-		urls = append(urls, strings.Split(*urlsFlag, ",")...)
-	}
-	if *fileFlag != "" {
-		fileUrls, err := readURLsFromFile(*fileFlag)
+	if *jsonFlag != "" {
+		jsonUrls, err := ReadJSON(*jsonFlag)
 		if err != nil {
-			slog.Error("Error: Failed to read URLs from file")
+			slog.Error("Error: Failed to read URLs from JSON file")
 			os.Exit(1)
 		}
-		urls = append(urls, fileUrls...)
+		urls = append(urls, jsonUrls...)
+	}
+
+	if *maxPageFlag == 0 {
+		*maxPageFlag = -1 //negative value indicates no limit
+	}
+	// create a schedular
+	schedular := crawler.NewScheduler(100, *depthFlag, *maxPageFlag)
+
+	if len(urls) == 0 {
+		if *fileFlag != "" {
+			fileUrls, err := readURLsFromFile(*fileFlag)
+			if err != nil {
+				slog.Error("Error: Failed to read URLs from file")
+				os.Exit(1)
+			}
+			urls = append(urls, fileUrls...)
+		}
 	}
 	//validation
 	if len(urls) == 0 {
@@ -90,10 +127,23 @@ func main () {
 	}
 	// add a URL to the schedular
 	for _,url := range urls {
-		schedular.Add(url)
+		schedular.Add(url, 0)
 	}
+	// extract domains
+	domainsMap := make(map[string]bool)
+	for _,url := range urls{
+		d := crawler.ExtractDomain(url)
+		if d != "" {
+			domainsMap[d] = true
+		}
+	}
+	var domains []string
+	for d := range domainsMap {
+		domains = append(domains, d)
+	}
+
 	// create a fetcher
-	f := crawler.NewFetcher(schedular, int64(crawlDelay))
+	f := crawler.NewFetcher(schedular,domains, int64(crawlDelay))
 	// start crawling
 	slog.Info("Crawling started ...")
 	slog.Info("Crawling depth:", "depth" ,*depthFlag)

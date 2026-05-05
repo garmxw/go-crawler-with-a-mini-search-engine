@@ -126,3 +126,11 @@
 
    -- Indexing for speed
    CREATE INDEX idx_terms_word ON terms(word);
+
+the commands :
+
+1. gocrawl --url https://a.com --url https://b.com : to read 1 or more urls
+2. gocrawl --file urls.txt : to read a file of urls (can be txt/json for now i will add to it later)
+3. gocrawl --json urls.json : to read a json file of urls in this structure :
+   example json {"urls": ["https://example.com", "https://example.org"]}
+4. and they all take the --depth flag example : gocrawl --url https://example.com --depth 2
