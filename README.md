@@ -134,3 +134,13 @@ the commands :
 3. gocrawl --json urls.json : to read a json file of urls in this structure :
    example json {"urls": ["https://example.com", "https://example.org"]}
 4. and they all take the --depth flag example : gocrawl --url https://example.com --depth 2
+
+the storage :
+storage will be on data/storage/("ID".json)
+the json will be like this :
+{
+"ID": 1,
+"URL": "https://example.com",
+"Title": "Example Domain",
+"Text": "This domain is for use in illustrative examples..."
+}

@@ -5,15 +5,17 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/storage" //my module
 	"github.com/gocolly/colly"
 )
 
 type Fetcher struct {
 	collector *colly.Collector
 	Scheduler *Scheduler
+	storage   *storage.Storage
 }
 
-func NewFetcher(s *Scheduler, domains []string, delay int64) *Fetcher {
+func NewFetcher(s *Scheduler, st *storage.Storage, domains []string, delay int64) *Fetcher {
 	c := colly.NewCollector(
 		colly.AllowedDomains(domains...),
 		colly.Async(true),
@@ -39,6 +41,7 @@ func NewFetcher(s *Scheduler, domains []string, delay int64) *Fetcher {
 	f := &Fetcher{
 		collector: c,
 		Scheduler: s,
+		storage:   st,
 	}
 	f.registerCallbacks()
 	// Log everything in one or two structured lines
@@ -83,6 +86,14 @@ func (f *Fetcher) registerCallbacks() {
 			depth = d.(int)
 		}
 		page := ParserPage(e)
+
+		id := f.storage.SavePage(storage.Page{
+			URL: page.URL,
+			Title: page.Title,
+			Text: page.Text,
+		})
+
+		log.Println("Saved page: ", id)
 		log.Println("Parsed page: ", page)
 		log.Println("Title: ", page.Title)
 		//add new links to schedular

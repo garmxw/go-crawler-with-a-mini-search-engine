@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/crawler"
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/storage"
 )
 
 // custom flag type for multi-value flags
@@ -107,6 +108,8 @@ func main () {
 	if *maxPageFlag == 0 {
 		*maxPageFlag = -1 //negative value indicates no limit
 	}
+
+
 	// create a schedular
 	schedular := crawler.NewScheduler(100, *depthFlag, *maxPageFlag)
 
@@ -142,8 +145,11 @@ func main () {
 		domains = append(domains, d)
 	}
 
+	// create a storage
+	st := storage.NewStorage("data/pages")
+
 	// create a fetcher
-	f := crawler.NewFetcher(schedular,domains, int64(crawlDelay))
+	f := crawler.NewFetcher(schedular, st, domains, int64(crawlDelay))
 	// start crawling
 	slog.Info("Crawling started ...")
 	slog.Info("Crawling depth:", "depth" ,*depthFlag)
