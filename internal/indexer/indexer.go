@@ -7,6 +7,7 @@ import "math"
 type Indexer struct {
 	Index map[string]map[int]int // token (word) -> docID -> count (freq)
 	DocMaxFreq map[int]int // docID -> max frequency
+	Documents map[int]string // docID -> path
 	TotalDocs int
 	lang  string
 }
@@ -16,12 +17,16 @@ func NewIndexer(lang string) *Indexer {
 	return &Indexer{
 		Index: make(map[string]map[int]int),
 		DocMaxFreq: make(map[int]int),
+		Documents: make(map[int]string),
 		TotalDocs: 0,
 		lang:  lang,
 	}
 }
 
-func (i *Indexer) Add(docID int, text string) {
+func (i *Indexer) Add(docID int, text string, path string) {
+	// store document path for later retrieval
+	i.Documents[docID] = path
+	// tokenize, remove stopwords, and stem the text
 	tokens := Tokenizer(text)
 	tokens = RemoveStopWords(tokens)
 	tokens = StemWords(tokens, i.lang)

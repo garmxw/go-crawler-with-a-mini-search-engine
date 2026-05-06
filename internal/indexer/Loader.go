@@ -36,7 +36,7 @@ func LoadAndIndex(path string, idx *Indexer) error {
 			continue
 		}
 
-		idx.Add(page.ID, page.Text)
+		idx.Add(page.ID, page.Text, fullPath)
 	}
 
 	return nil

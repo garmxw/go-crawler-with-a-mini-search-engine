@@ -10,21 +10,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/cli"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/crawler"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/storage"
 )
 
-// custom flag type for multi-value flags
-type multiFlag []string
 
-func (m *multiFlag) String() string {
-	return ""
-}
-
-func (m *multiFlag) Set(value string) error {
-	*m = append(*m, value)
-	return nil
-}
 
 func ReadJSON(filename string) ([]string, error) {
 	file, err := os.ReadFile(filename)
@@ -77,7 +68,7 @@ func main () {
 		slog.Error("Error: CrawlerDelay is not a valid value")
 	}
 	//flags
-	var urls multiFlag
+	var urls cli.MultiFlag
 	flag.Var(&urls, "url", "Add URL (can be used multiple times)")
 	fileFlag := flag.String("file", "", "File containing URLs to crawl")
 	// example json {"urls": ["https://example.com", "https://example.org"]}
