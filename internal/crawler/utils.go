@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"net/url"
+	"strings"
 )
 
 func ExtractDomain(rawURL string) string {
@@ -12,11 +13,14 @@ func ExtractDomain(rawURL string) string {
 	return parsed.Host
 }
 
+// NormalizeURL ensures we don't crawl "example.com/" and "example.com" as two pages
 func NormalizeURL(rawURL string) string {
-	parsed, err := url.Parse(rawURL)
+	u, err := url.Parse(rawURL)
 	if err != nil {
 		return ""
 	}
-	parsed.Fragment = ""
-	return parsed.String()
+	u.Host = strings.ToLower(u.Host)
+	u.Path = strings.TrimSuffix(u.Path, "/")
+	u.Fragment = "" // Remove #anchors
+	return u.String()
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -39,7 +40,10 @@ func (s *Storage) SavePage(page Page) int {
 	defer s.mu.Unlock()
 	page.ID = s.nextID
 	s.nextID++
-	filename := fmt.Sprintf("%s%d.json", s.path, page.ID)
+	filename := filepath.Join(
+		s.path,
+		fmt.Sprintf("%d.json", page.ID),
+)
 
 	file, err := os.Create(filename)
 	if err != nil {
@@ -52,4 +56,31 @@ func (s *Storage) SavePage(page Page) int {
     	return -1
     }
 	return page.ID
+}
+
+func (s *Storage) LoadPages() ([]Page, error) {
+	var pages []Page
+	entries, err := os.ReadDir(s.path)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+        if entry.IsDir(){
+            continue
+        }
+        filePath := filepath.Join(s.path, entry.Name())
+        file, err := os.Open(filePath)
+        if err != nil {
+            continue
+        }
+        var page Page
+        decode := json.NewDecoder(file)
+        if err := decode.Decode(&page); err != nil {
+            file.Close()
+            continue
+        }
+        file.Close()
+        pages = append(pages, page)
+	}
+	return pages, nil
 }

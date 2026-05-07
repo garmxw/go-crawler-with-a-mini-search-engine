@@ -73,12 +73,25 @@ func main () {
 
 	switch *mode {
 	case "web":
-		fmt.Println("Running web mode...")
-		//later:
-		// run crawler with flags
-		// then index
+		fmt.Println("\nRunning web mode...")
+		results, err := search.RunWebMode(*query, *langFlag, "data/storage",*detailedFlag)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if *limitFlag > 0 && len(results) > *limitFlag {
+			results = results[:*limitFlag]
+		}
+
+		for i, r := range results {
+			fmt.Printf(
+				"%d. Score: %.4f | Path: %s\n",
+				i+1,
+				r.Score,
+				r.Path,
+			)
+		}
 	case "local":
-		fmt.Println("Running local mode...")
+		fmt.Println("\nRunning local mode...")
 		results, err := search.RunLocalMode(*path, *query, *langFlag, *detailedFlag)
 		if err != nil {
 			log.Fatal(err)

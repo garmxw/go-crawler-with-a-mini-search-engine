@@ -5,68 +5,74 @@ import (
 )
 
 type URLItem struct {
-	URL string
+	URL   string
 	Depth int
 }
 
-
 type Scheduler struct {
-	queue chan URLItem
-	visited map[string]bool
+	queue    chan URLItem
+	visited  map[string]bool
 	maxDepth int
 	maxPages int
-	count int
-	mu  sync.Mutex
+	count    int
+	mu       sync.Mutex
 }
 
-func NewScheduler (buffer int, maxDepth int, maxPages int ) *Scheduler {
+
+// GetCount returns the current number of pages processed
+func (s *Scheduler) GetCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.count
+}
+
+// GetMaxPages returns the limit
+func (s *Scheduler) GetMaxPages() int {
+	return s.maxPages
+}
+
+func NewScheduler(buffer int, maxDepth int, maxPages int) *Scheduler {
 	return &Scheduler{
-		queue: make(chan URLItem, buffer),
-		visited: make(map[string]bool),
+		// Use a large enough buffer to prevent early deadlocks
+		queue:    make(chan URLItem, buffer),
+		visited:  make(map[string]bool),
 		maxDepth: maxDepth,
 		maxPages: maxPages,
 	}
 }
 
-func (s *Scheduler) Add(url string, depth int) {
-	url = NormalizeURL(url)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	// Check if we've already hit the page limit
-	if s.maxPages > 0 && s.count >= s.maxPages {
+func (s *Scheduler) Add(rawURL string, depth int) {
+	normalized := NormalizeURL(rawURL)
+	if normalized == "" {
 		return
 	}
-	if !s.visited[url] && depth <= s.maxDepth {
-		s.visited[url] = true
-		s.count++
-		s.queue <- URLItem{URL: url, Depth: depth}
 
-	}
-}
-
-func (s *Scheduler) Next() URLItem {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// 1. Check Limits
+	if (s.maxPages > 0 && s.count >= s.maxPages) || depth > s.maxDepth {
+		return
+	}
+
+	// 2. Duplication Check
+	if s.visited[normalized] {
+		return
+	}
+
+	// 3. Register and Enqueue
+	s.visited[normalized] = true
+	s.count++
+
+	// Non-blocking send to prevent the Fetcher from hanging if the buffer is full
 	select {
-	case url := <-s.queue:
-		return url
+	case s.queue <- URLItem{URL: normalized, Depth: depth}:
 	default:
-		return URLItem{}
+		// If buffer is full, we log it or ignore it to keep the crawler moving
 	}
 }
-func (s *Scheduler) IsVisited(url string) bool {
-	url = NormalizeURL(url)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.visited[url]
-}
 
-func (s *Scheduler) IsEmpty() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.queue) == 0
-}
-
-func (s *Scheduler) Close() {
-	close(s.queue)
+func (s *Scheduler) Next() (URLItem, bool) {
+	item, ok := <-s.queue
+	return item, ok
 }

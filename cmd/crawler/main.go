@@ -73,7 +73,7 @@ func main () {
 	fileFlag := flag.String("file", "", "File containing URLs to crawl")
 	// example json {"urls": ["https://example.com", "https://example.org"]}
 	jsonFlag := flag.String("json", "", "JSON file with URLs")
-	depthFlag := flag.Int("depth", 3, "Depth of the crawl")
+	depthFlag := flag.Int("depth", 0, "Depth of the crawl")
 	maxPageFlag := flag.Int("maxPages", 0, "Maximum number of pages to crawl")
 
 	flag.Parse()
@@ -82,9 +82,9 @@ func main () {
 		slog.Error("Error: No URLs provided")
 		return
 	}
-	if *depthFlag < 1 {
-		slog.Warn("Warning: Depth is less than 1, setting to default depth of 3")
-		*depthFlag = 3
+	if *depthFlag < 0 {
+		slog.Warn("Warning: Depth is less than 0, setting to default depth of 0")
+		*depthFlag = 0
 	}
 
 	if *jsonFlag != "" {
@@ -140,7 +140,7 @@ func main () {
 	st := storage.NewStorage("data/pages")
 
 	// create a fetcher
-	f := crawler.NewFetcher(schedular, st, domains, int64(crawlDelay))
+	f := crawler.NewFetcher(schedular, st, domains, int64(crawlDelay), *depthFlag)
 	// start crawling
 	slog.Info("Crawling started ...")
 	slog.Info("Crawling depth:", "depth" ,*depthFlag)
