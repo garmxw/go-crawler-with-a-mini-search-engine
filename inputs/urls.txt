@@ -1,0 +1,3 @@
+https://quotes.toscrape.com/tag/humor/
+https://quotes.toscrape.com/tag/books/
+https://quotes.toscrape.com/tag/simile/

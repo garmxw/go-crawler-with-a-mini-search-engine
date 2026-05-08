@@ -65,7 +65,7 @@ func main () {
 	crawlDelay,err := strconv.Atoi(delayStr)
 	if err != nil {
 		crawlDelay = 2
-		slog.Error("Error: CrawlerDelay is not a valid value")
+		slog.Info("Info: CrawlerDelay is not a valid value")
 	}
 	//flags
 	var urls cli.MultiFlag
@@ -74,12 +74,12 @@ func main () {
 	// example json {"urls": ["https://example.com", "https://example.org"]}
 	jsonFlag := flag.String("json", "", "JSON file with URLs")
 	depthFlag := flag.Int("depth", 0, "Depth of the crawl")
-	maxPageFlag := flag.Int("maxPages", 0, "Maximum number of pages to crawl")
+	maxPageFlag := flag.Int("maxPages", 3, "Maximum number of pages to crawl")
 
 	flag.Parse()
 
-	if len(urls) == 0 && *fileFlag == "" {
-		slog.Error("Error: No URLs provided")
+	if len(urls) == 0 && *fileFlag == "" && *jsonFlag == "" {
+		slog.Error("Error: No URLs provided and no file specified")
 		return
 	}
 	if *depthFlag < 0 {

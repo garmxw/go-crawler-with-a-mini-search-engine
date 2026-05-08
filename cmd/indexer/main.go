@@ -1,5 +1,6 @@
 package main
 
+//needs to be removed and replaced by cmd/main.go this was just a test
 import (
 	"fmt" //we will import the indexer logic here
 	"log"

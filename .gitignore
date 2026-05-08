@@ -40,3 +40,6 @@ Thumbs.db
 data/
 tmp/
 cache/
+
+# my todo list
+TODO.md

@@ -3,6 +3,7 @@ package crawler
 import (
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 )
 
@@ -19,7 +20,6 @@ func ParserPage(e *colly.HTMLElement) Page {
 	}
 
 	// Title Extraction
-	// Fallback to <h1> if <title> tag is missing or empty
 	page.Title = e.ChildText("title")
 	if page.Title == "" {
 		page.Title = e.ChildText("h1")
@@ -28,25 +28,36 @@ func ParserPage(e *colly.HTMLElement) Page {
 	// URL Normalization
 	e.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
 		link := el.Attr("href")
-
-		// Use AbsoluteURL to handle relative paths like "/about" automatically
 		absolute := e.Request.AbsoluteURL(link)
-
-		// Filter out empty strings, javascript: void(0), and anchor fragments
-		if absolute != "" &&
-		   !strings.Contains(absolute, "javascript:") &&
-		   !strings.HasPrefix(link, "#") {
+		if absolute != "" && !strings.Contains(absolute, "javascript:") && !strings.HasPrefix(link, "#") {
 			page.Links = append(page.Links, absolute)
 		}
 	})
 
-	// We use a clone of the selection to remove "junk" tags before grabbing text.
-	// This prevents navbars, scripts, and footers from cluttering your data.
-	domCopy := e.DOM.Clone()
-	domCopy.Find("nav, footer, script, style, noscript, .sidebar, .menu, #footer, #header").Remove()
+	var contentSelection *goquery.Selection
+	if main := e.DOM.Find("main"); main.Length() > 0 {
+		contentSelection = main
+    } else if article := e.DOM.Find("article"); article.Length() > 0 {
+        contentSelection = article
+    } else {
+        contentSelection = e.DOM
+    }
 
-	// Get the text from the remaining content (usually <main> or <body> minus the junk)
-	page.Text = strings.TrimSpace(domCopy.Text())
+    // Clone the selection so we don't mess up the original links parsing
+    domCopy := contentSelection.Clone()
+
+    // REMOVE BLOAT: Delete elements that usually contain "junk" text (buttons, forms, navs, and common class names for sidebars/widgets)
+    domCopy.Find("nav, footer, script, style, noscript, header, aside").Remove()
+    domCopy.Find("button, form, .sidebar, .menu, .ads, .social-share").Remove()
+
+    // Clean the whitespace
+    rawText := domCopy.Text()
+    words := strings.Fields(rawText)
+
+    // OPTIONAL (for later): Filter out "Micro-Words"
+    // For a search engine, words like "a", "the", "to" (Stop Words) are often bloat.
+    // We'll keep it simple for now and just join the words.
+    page.Text = strings.Join(words, " ")
 
 	return page
 }

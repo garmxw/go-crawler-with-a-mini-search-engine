@@ -110,12 +110,12 @@ func (f *Fetcher) Start() {
 	for {
 		// Check if we reached the max pages limit
 		if f.Scheduler.GetMaxPages() > 0 && f.Scheduler.GetCount() >= f.Scheduler.GetMaxPages() {
-			// We hit the limit, but we must wait for active workers to finish writing
-			if f.active.Load() == 0 {
-				slog.Info("Max pages limit reached and all workers idle.")
-				break
-			}
-		}
+					// THE FIX: We must ALSO check that the queue is empty (len == 0)
+					if len(f.Scheduler.queue) == 0 && f.active.Load() == 0 {
+						slog.Info("Target page count reached and processed. Shutting down.")
+						break
+					}
+				}
 
 		select {
 		case item, ok := <-f.Scheduler.queue:
