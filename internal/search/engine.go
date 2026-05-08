@@ -3,8 +3,10 @@ package search
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/crawler"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/indexer"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/local"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/models"
@@ -57,7 +59,9 @@ func RunWebMode(
 	storagePath string,
 	detailed bool,
 ) ([]models.SearchResult, error) {
+	// Create a new storage instance which loads pages from the given path
 	store := storage.NewStorage(storagePath)
+	// Load pages from storage
 	pages, err := store.LoadPages()
 	if err != nil {
 		return nil, err
@@ -80,4 +84,53 @@ func RunWebMode(
 	}
 	results := Search(query, idx, lang)
 	return results, nil
+}
+
+func RunWebLiveMode(
+	query string,
+	lang string,
+	urls []string,
+	depth int,
+	maxPages int,
+	delay int,
+	filePath string,
+	jsonFilePath string,
+	detailed bool,
+	storagePath string,
+) ([]models.SearchResult, error) {
+
+	// clear old pages first
+	os.RemoveAll(storagePath)
+
+	err := os.MkdirAll(
+		storagePath,
+		os.ModePerm,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// crawl first
+	err = crawler.RunCrawler(
+		urls,
+		depth,
+		maxPages,
+		delay,
+		filePath,
+		jsonFilePath,
+		storagePath,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// THEN search stored pages
+	return RunWebMode(
+		query,
+		lang,
+		storagePath,
+		detailed,
+	)
 }

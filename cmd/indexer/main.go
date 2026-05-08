@@ -1,21 +1,159 @@
 package main
 
-//needs to be removed and replaced by cmd/main.go this was just a test
 import (
-	"fmt" //we will import the indexer logic here
+	"flag"
+	"fmt"
 	"log"
+	"log/slog"
 
-	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/indexer"
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/configs"
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/cli"
+
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/search"
 )
 
 func main () {
+	crawlDelay := configs.ReadDelay()
 
-    idx := indexer.NewIndexer("english")//dynamique later
+	mode := flag.String("mode", "local", "Mode: web or local or live")
+	query := flag.String("query", "", "Search query")
 
-	err := indexer.LoadAndIndex("data/pages", idx)
-	if err != nil {
-			log.Fatal(err)
+	//local
+	path := flag.String("path", "", "Path to local file")
+
+	// web
+	var urls cli.MultiFlag
+	flag.Var(&urls, "url", "URL to crawl")
+	langFlag := flag.String("lang", "english", "Language of the text (english or french)")
+	limitFlag := flag.Int("limit", 1, "Max number of results to return")
+	detailedFlag := flag.Bool("detailed", false, "Detailed output")
+
+
+	//live (reuse crwaler's flags)
+	fileFlag := flag.String("file", "", "File containing URLs to crawl")
+	jsonFlag := flag.String("json", "", "JSON file with URLs") 	// example json {"urls": ["https://example.com", "https://example.org"]}
+	depthFlag := flag.Int("depth", 0, "Depth of the crawl")
+	maxPageFlag := flag.Int("maxPages", 3, "Maximum number of pages to crawl")
+	pagesPathFlag := flag.String("storage", "data/pages", "Path to save the crawl results")// also the Path to store pages
+
+
+
+	flag.Parse()
+
+
+	fmt.Println("\nGo Search !!")
+	fmt.Println("mode:", *mode)
+	fmt.Println("query:", *query)
+	fmt.Println("path:", *path)
+	fmt.Println("urls:", urls)
+	fmt.Println("lang:", *langFlag)
+	fmt.Println("limit:", *limitFlag)
+	fmt.Println("detailed:", *detailedFlag)
+	fmt.Println("pagesPath:", *pagesPathFlag)
+
+	if *mode == "" || *query == "" {
+		log.Fatal("mode and query are required")
+		return
 	}
 
-	fmt.Println(idx.Index["go"])//just for now
+	if *mode != "web" && *mode != "local" && *mode != "live" {
+		log.Fatal("invalid mode only web or local are supported")
+		return
+	}
+
+	if *mode == "local" && *path == "" {
+		log.Fatal("path is required for local mode")
+		return
+	}
+
+	if *limitFlag <= 0 {
+    slog.Warn("Warning: limit must be positive. Defaulting to 1.")
+    *limitFlag = 1
+}
+
+
+	if *langFlag != "english" && *langFlag != "french" {
+		slog.Warn(
+			"invalid language, defaulting to english",
+			"provided", *langFlag,
+		)
+
+		*langFlag = "english"
+	}
+
+	switch *mode {
+	case "web":
+		fmt.Println("\nRunning web mode...")
+		results, err := search.RunWebMode(*query, *langFlag, *pagesPathFlag, *detailedFlag)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if *limitFlag > 0 && len(results) > *limitFlag {
+			results = results[:*limitFlag]
+		}
+
+		for i, r := range results {
+			fmt.Printf(
+				"%d. Score: %.4f | Path: %s\n",
+				i+1,
+				r.Score,
+				r.Path,
+			)
+		}
+	case "local":
+		fmt.Println("\nRunning local mode...")
+		results, err := search.RunLocalMode(*path, *query, *langFlag, *detailedFlag)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if *limitFlag > 0 && len(results) > *limitFlag {
+			results = results[:*limitFlag]
+		}
+
+		fmt.Println("\nResults:")
+		for i, r := range results {
+			fmt.Printf(
+				"%d. Score: %.4f | Path: %s\n",
+				i+1,
+				r.Score,
+				r.Path,
+				)
+		}
+	case "live":
+		fmt.Println("\nRunning live mode...")
+		results, err := search.RunWebLiveMode(
+			*query,
+			*langFlag,
+			urls,
+			*depthFlag,
+			*maxPageFlag,
+			crawlDelay,
+			*fileFlag,
+			*jsonFlag,
+			*detailedFlag,
+			*pagesPathFlag,
+		)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if *limitFlag > 0 && len(results) > *limitFlag {
+			results = results[:*limitFlag]
+		}
+
+		for i, r := range results {
+			fmt.Printf(
+				"%d. Score: %.4f | Path: %s\n",
+				i+1,
+				r.Score,
+				r.Path,
+			)
+		}
+
+	default:
+		log.Fatal("invalid mode use -mode=web or -mode=local")
+		return
+	}
+
 }

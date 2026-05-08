@@ -24,7 +24,7 @@ type Storage struct {
 	nextID int
 	path string
 }
-
+// NewStorage creates a new Storage instance with the given path.
 func NewStorage(path string) *Storage {
 	os.MkdirAll(path, os.ModePerm)
 

@@ -3,7 +3,9 @@ package configs
 import (
 	"bufio"
 	"log"
+	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -65,4 +67,14 @@ func loadDotEnv(filename string) {
 		// set into environment
 		os.Setenv(key, value)
 	}
+}
+
+func ReadDelay() int {
+	delayStr := os.Getenv("CrawlDelay")
+	crawlDelay, err := strconv.Atoi(delayStr)
+	if err != nil {
+		crawlDelay = 2
+		slog.Info("Info: CrawlerDelay is not a valid value")
+	}
+	return crawlDelay
 }
