@@ -163,3 +163,6 @@ launches :
    NOTE : they all can take the optional --storage flag to specify the storage directory and default to data/storage/
 
 url to test on : https://quotes.toscrape.com/tag/books/
+
+to check if the project uses cgo run :
+go list -f "{{if .CgoFiles}}{{.ImportPath}}{{end}}" ./...
