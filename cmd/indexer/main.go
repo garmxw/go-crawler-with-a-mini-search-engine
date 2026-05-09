@@ -1,111 +1,50 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"log"
-	"log/slog"
 	"os"
-	"strconv"
 
-	"github.com/garmxw/go-crawler-with-a-mini-search-engine/configs"
-	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/cli"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/models"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/search"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/ui"
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/ui/tui"
 )
 
 func main() {
-	crawlDelay := configs.ReadDelay()
-
-	// Flags
-	mode := flag.String("mode", "local", "Mode: web | local | live")
-	query := flag.String("query", "", "Search query")
-	path := flag.String("path", "", "Path to local files  (local mode)")
-
-	var urls cli.MultiFlag
-	flag.Var(&urls, "url", "URL to crawl  (live mode, repeatable)")
-	langFlag := flag.String("lang", "english", "Language: english | french")
-	limitFlag := flag.Int("limit", 1, "Max results to return")
-	detailedFlag := flag.Bool("detailed", false, "Print detailed index stats")
-
-	fileFlag := flag.String("file", "", "File containing URLs  (live mode)")
-	jsonFlag := flag.String("json", "", "JSON file with URLs  (live mode)")
-	depthFlag := flag.Int("depth", 0, "Crawl depth  (live mode)")
-	maxPageFlag := flag.Int("maxPages", 3, "Max pages to crawl  (live mode)")
-	pagesPathFlag := flag.String("storage", "data/pages", "Pages storage path")
-
-	flag.Parse()
-
-	//  Banner
+	// 1. Banner — prints once and stays on screen above the form
 	ui.PrintSearchBanner()
 
-	// Validation
-	if *mode == "" || *query == "" {
-		ui.ErrorBox("-mode and -query flags are required.")
+	// 2. Interactive form — renders inline below the banner
+	cfg, err := tui.RunSearchForm(tui.SearchConfig{
+		Mode:     "local",
+		Lang:     "english",
+		Limit:    5,
+		MaxPages: 3,
+		Delay:    2,
+		Storage:  "data/pages",
+	})
+	if err != nil {
+		ui.ErrorBox("TUI error: " + err.Error())
 		os.Exit(1)
 	}
-
-	if *mode != "web" && *mode != "local" && *mode != "live" {
-		ui.ErrorBox("Invalid mode: \"" + *mode + "\".  Use: web | local | live")
-		os.Exit(1)
+	if !cfg.Submitted {
+		fmt.Println()
+		ui.Dim("Aborted.")
+		os.Exit(0)
 	}
 
-	if *mode == "local" && *path == "" {
-		ui.ErrorBox("-path is required when using local mode.")
-		os.Exit(1)
-	}
+	// 3. Confirm panel already printed inside the TUI (below the locked form).
+	//    Now run the actual search logic — spinner + results print here below.
+	fmt.Println()
 
-	if *limitFlag <= 0 {
-		slog.Warn("limit must be positive, defaulting to 1")
-		*limitFlag = 1
-	}
-
-	if *langFlag != "english" && *langFlag != "french" {
-		ui.Warn("Invalid language \"" + *langFlag + "\", defaulting to english.")
-		*langFlag = "english"
-	}
-
-	//Mode badge + config panel
-	ui.PrintModeBadge(*mode)
-
-	rows := []ui.ConfigRow{
-		{Key: "Query", Value: "\"" + *query + "\""},
-		{Key: "Language", Value: *langFlag},
-		{Key: "Limit", Value: strconv.Itoa(*limitFlag)},
-		{Key: "Detailed", Value: strconv.FormatBool(*detailedFlag)},
-	}
-	switch *mode {
-	case "local":
-		rows = append(rows, ui.ConfigRow{Key: "Path", Value: *path})
-	case "web":
-		rows = append(rows, ui.ConfigRow{Key: "Storage", Value: *pagesPathFlag})
-	case "live":
-		urlDisplay := "(none)"
-		if len(urls) > 0 {
-			urlDisplay = urls[0]
-			if len(urls) > 1 {
-				urlDisplay += " (+more)"
-			}
-		}
-		rows = append(rows,
-			ui.ConfigRow{Key: "URLs", Value: urlDisplay},
-			ui.ConfigRow{Key: "Depth", Value: strconv.Itoa(*depthFlag)},
-			ui.ConfigRow{Key: "Max Pages", Value: strconv.Itoa(*maxPageFlag)},
-			ui.ConfigRow{Key: "Delay (s)", Value: strconv.Itoa(crawlDelay)},
-			ui.ConfigRow{Key: "Storage", Value: *pagesPathFlag},
-		)
-	}
-	ui.PrintConfigPanel("Search Configuration", rows)
-
-	// Run
 	var results []models.SearchResult
-	var err error
 
-	switch *mode {
+	switch cfg.Mode {
 	case "web":
 		ui.Info("Loading stored pages...")
 		spin := ui.NewSpinner("Indexing documents...")
-		results, err = search.RunWebMode(*query, *langFlag, *pagesPathFlag, *detailedFlag)
+		results, err = search.RunWebMode(cfg.Query, cfg.Lang, cfg.Storage, cfg.Detailed)
 		if err != nil {
 			spin.Fail("Web mode failed")
 			log.Fatal(err)
@@ -115,7 +54,7 @@ func main() {
 	case "local":
 		ui.Info("Loading local documents...")
 		spin := ui.NewSpinner("Indexing documents...")
-		results, err = search.RunLocalMode(*path, *query, *langFlag, *detailedFlag)
+		results, err = search.RunLocalMode(cfg.Path, cfg.Query, cfg.Lang, cfg.Detailed)
 		if err != nil {
 			spin.Fail("Local mode failed")
 			log.Fatal(err)
@@ -126,16 +65,16 @@ func main() {
 		ui.Info("Starting live crawl → index pipeline...")
 		spin := ui.NewSpinner("Crawling the web...")
 		results, err = search.RunWebLiveMode(
-			*query,
-			*langFlag,
-			urls,
-			*depthFlag,
-			*maxPageFlag,
-			crawlDelay,
-			*fileFlag,
-			*jsonFlag,
-			*detailedFlag,
-			*pagesPathFlag,
+			cfg.Query,
+			cfg.Lang,
+			cfg.URLs,
+			cfg.Depth,
+			cfg.MaxPages,
+			cfg.Delay,
+			cfg.File,
+			cfg.JSON,
+			cfg.Detailed,
+			cfg.Storage,
 		)
 		if err != nil {
 			spin.Fail("Live mode failed")
@@ -144,16 +83,16 @@ func main() {
 		spin.Done("Crawl + index complete!")
 
 	default:
-		ui.ErrorBox("Invalid mode. Use -mode=web | local | live")
+		ui.ErrorBox("Unknown mode: " + cfg.Mode)
 		os.Exit(1)
 	}
 
 	// Trim results
-	if *limitFlag > 0 && len(results) > *limitFlag {
-		results = results[:*limitFlag]
+	if cfg.Limit > 0 && len(results) > cfg.Limit {
+		results = results[:cfg.Limit]
 	}
 
-	// Display results
+	// Display results — prints below everything
 	uiResults := make([]ui.SearchResult, len(results))
 	for i, r := range results {
 		uiResults[i] = ui.SearchResult{
@@ -162,7 +101,6 @@ func main() {
 			Score: r.Score,
 		}
 	}
-
-	ui.PrintSearchResults(uiResults, *query)
+	ui.PrintSearchResults(uiResults, cfg.Query)
 	ui.Divider()
 }

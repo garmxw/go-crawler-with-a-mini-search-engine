@@ -1,66 +1,48 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"strconv"
 
-	"github.com/garmxw/go-crawler-with-a-mini-search-engine/configs"
-	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/cli"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/crawler"
 	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/ui"
+	"github.com/garmxw/go-crawler-with-a-mini-search-engine/internal/ui/tui"
 )
 
 func main() {
-	crawlDelay := configs.ReadDelay()
-
-	// Flags
-	var urls cli.MultiFlag
-	flag.Var(&urls, "url", "Add URL (can be used multiple times)")
-	fileFlag := flag.String("file", "", "File containing URLs to crawl")
-	jsonFlag := flag.String("json", "", "JSON file with URLs") // {"urls": ["https://example.com"]}
-	depthFlag := flag.Int("depth", 0, "Depth of the crawl")
-	maxPageFlag := flag.Int("maxPages", 3, "Maximum number of pages to crawl")
-	pagesPathFlag := flag.String("storage", "data/pages", "Path to save the crawl results")
-
-	flag.Parse()
-
-	//  Banner
+	// 1. Banner — prints once and stays on screen above the form
 	ui.PrintCrawlerBanner()
 
-	// Config panel
-	urlDisplay := "(none)"
-	if len(urls) > 0 {
-		urlDisplay = urls[0]
-		if len(urls) > 1 {
-			urlDisplay += fmt.Sprintf("  (+%d more)", len(urls)-1)
-		}
+	// 2. Interactive form — renders inline below the banner
+	cfg, err := tui.RunCrawlerForm(tui.CrawlerConfig{
+		MaxPages: 3,
+		Delay:    2,
+		Storage:  "data/pages",
+	})
+	if err != nil {
+		ui.ErrorBox("TUI error: " + err.Error())
+		os.Exit(1)
+	}
+	if !cfg.Submitted {
+		fmt.Println()
+		ui.Dim("Aborted.")
+		os.Exit(0)
 	}
 
-	ui.PrintConfigPanel("Crawl Configuration", []ui.ConfigRow{
-		{Key: "URLs", Value: strOr(urlDisplay, "(none)")},
-		{Key: "File", Value: strOr(*fileFlag, "(none)")},
-		{Key: "JSON", Value: strOr(*jsonFlag, "(none)")},
-		{Key: "Depth", Value: strconv.Itoa(*depthFlag)},
-		{Key: "Max Pages", Value: strconv.Itoa(*maxPageFlag)},
-		{Key: "Delay (s)", Value: strconv.Itoa(crawlDelay)},
-		{Key: "Storage", Value: *pagesPathFlag},
-	})
-
-	// Crawl
+	// 3. Confirm panel already printed inside the TUI (below the locked form).
+	//    Now run the actual crawler — spinner + result print here below everything.
+	fmt.Println()
 	spin := ui.NewSpinner("Crawling pages...")
 
-	err := crawler.RunCrawler(
-		urls,
-		*depthFlag,
-		*maxPageFlag,
-		crawlDelay,
-		*fileFlag,
-		*jsonFlag,
-		*pagesPathFlag,
+	err = crawler.RunCrawler(
+		cfg.URLs,
+		cfg.Depth,
+		cfg.MaxPages,
+		cfg.Delay,
+		cfg.File,
+		cfg.JSON,
+		cfg.Storage,
 	)
-
 	if err != nil {
 		spin.Fail("Crawl failed")
 		ui.ErrorBox("Crawl encountered an error: " + err.Error())
@@ -69,12 +51,5 @@ func main() {
 
 	spin.Done("Crawl complete!")
 	ui.Divider()
-	ui.SuccessBox("Pages saved to  →  " + *pagesPathFlag)
-}
-
-func strOr(s, fallback string) string {
-	if s == "" {
-		return fallback
-	}
-	return s
+	ui.SuccessBox("Pages saved to  →  " + cfg.Storage)
 }

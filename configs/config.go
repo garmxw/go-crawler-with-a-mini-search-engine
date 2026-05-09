@@ -11,7 +11,7 @@ import (
 
 type Config struct {
 	Port        string
-	//optional DatabaseURL string
+	//optional later DatabaseURL string
 	CrawlDelay  string
 }
 
@@ -70,11 +70,11 @@ func loadDotEnv(filename string) {
 }
 
 func ReadDelay() int {
-	delayStr := os.Getenv("CrawlDelay")
+	delayStr := os.Getenv("CRAWL_DELAY")
 	crawlDelay, err := strconv.Atoi(delayStr)
 	if err != nil {
 		crawlDelay = 2
-		slog.Info("Info: CrawlerDelay is not a valid value")
+		slog.Info("Info: CRAWL_DELAY is not a valid value or missing", "received", delayStr)
 	}
 	return crawlDelay
 }
