@@ -151,7 +151,7 @@ launches :
 1. to launch the indexer :
    go run ./cmd/indexer/main.go --mode=web --query="Finish each day and be done with it. You have done what you could. by Ralph Waldo Emerson" --detailed --limit=3
    NOTE : i ommited banch of flags the modes are web,local , live
-   Global flags : --lang to specify the language, --detailed to get detailed, --query to specify the query, --limit to limit the number of results
+   Global flags : --lang to specify the language(defaults to english), --detailed to get detailed, --query to specify the query, --limit to limit the number of results
    Local flags : --path to specify the local file path
    web flags : --storage to specify the storage directory
    live flags : reuse the crawler's flags
@@ -161,3 +161,5 @@ launches :
    -----or with a single url :
    go run ./cmd/crawler/main.go --url https://example.com --depth 2 --maxPages 5
    NOTE : they all can take the optional --storage flag to specify the storage directory and default to data/storage/
+
+url to test on : https://quotes.toscrape.com/tag/books/
