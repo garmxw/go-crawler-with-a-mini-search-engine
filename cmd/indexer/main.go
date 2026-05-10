@@ -12,10 +12,8 @@ import (
 )
 
 func main() {
-	// 1. Banner — prints once and stays on screen above the form
 	ui.PrintSearchBanner()
 
-	// 2. Interactive form — renders inline below the banner
 	cfg, err := tui.RunSearchForm(tui.SearchConfig{
 		Mode:     "local",
 		Lang:     "english",
@@ -25,7 +23,7 @@ func main() {
 		Storage:  "data/pages",
 	})
 	if err != nil {
-		ui.ErrorBox("TUI error: " + err.Error())
+		ui.ErrorBox("Error: " + err.Error())
 		os.Exit(1)
 	}
 	if !cfg.Submitted {
@@ -34,8 +32,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 3. Confirm panel already printed inside the TUI (below the locked form).
-	//    Now run the actual search logic — spinner + results print here below.
 	fmt.Println()
 
 	var results []models.SearchResult
@@ -43,20 +39,20 @@ func main() {
 	switch cfg.Mode {
 	case "web":
 		ui.Info("Loading stored pages...")
-		spin := ui.NewSpinner("Indexing documents...")
+		spin := ui.NewSpinner("Indexing...")
 		results, err = search.RunWebMode(cfg.Query, cfg.Lang, cfg.Storage, cfg.Detailed)
 		if err != nil {
-			spin.Fail("Web mode failed")
+			spin.Fail("Failed")
 			log.Fatal(err)
 		}
 		spin.Done("Index built!")
 
 	case "local":
 		ui.Info("Loading local documents...")
-		spin := ui.NewSpinner("Indexing documents...")
+		spin := ui.NewSpinner("Indexing...")
 		results, err = search.RunLocalMode(cfg.Path, cfg.Query, cfg.Lang, cfg.Detailed)
 		if err != nil {
-			spin.Fail("Local mode failed")
+			spin.Fail("Failed")
 			log.Fatal(err)
 		}
 		spin.Done("Index built!")
@@ -77,7 +73,7 @@ func main() {
 			cfg.Storage,
 		)
 		if err != nil {
-			spin.Fail("Live mode failed")
+			spin.Fail("Failed")
 			log.Fatal(err)
 		}
 		spin.Done("Crawl + index complete!")
@@ -87,12 +83,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Trim results
 	if cfg.Limit > 0 && len(results) > cfg.Limit {
 		results = results[:cfg.Limit]
 	}
 
-	// Display results — prints below everything
 	uiResults := make([]ui.SearchResult, len(results))
 	for i, r := range results {
 		uiResults[i] = ui.SearchResult{
@@ -101,6 +95,7 @@ func main() {
 			Score: r.Score,
 		}
 	}
+
 	ui.PrintSearchResults(uiResults, cfg.Query)
 	ui.Divider()
 }
