@@ -435,9 +435,12 @@ func (m CrawlerFormModel) Result() CrawlerConfig {
 }
 
 // RunCrawlerForm runs inline — banner stays visible above, results print below.
+// Uses newProgram() which sets tea.WithInput(os.Stdin) + tea.WithOutput(os.Stderr)
+// so it works correctly on Windows Terminal Preview and all Unix terminals.
 func RunCrawlerForm(defaults CrawlerConfig) (CrawlerConfig, error) {
-	p := tea.NewProgram(NewCrawlerForm(defaults)) // no WithAltScreen
+	p := newProgram(NewCrawlerForm(defaults))
 	final, err := p.Run()
+	restoreConsoleInput() // restore stdin mode on Windows before crawler runs
 	if err != nil {
 		return CrawlerConfig{}, err
 	}
@@ -446,7 +449,7 @@ func RunCrawlerForm(defaults CrawlerConfig) (CrawlerConfig, error) {
 
 func strOrDash(s string) string {
 	if s == "" {
-		return "—"
+		return "(none)"
 	}
 	return s
 }

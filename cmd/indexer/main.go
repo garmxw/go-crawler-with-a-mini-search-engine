@@ -62,7 +62,7 @@ func main() {
 		spin.Done("Index built!")
 
 	case "live":
-		ui.Info("Starting live crawl → index pipeline...")
+		ui.Info("Starting live crawl + index pipeline...")
 		spin := ui.NewSpinner("Crawling the web...")
 		results, err = search.RunWebLiveMode(
 			cfg.Query,

@@ -3,6 +3,8 @@ package ui
 import "github.com/pterm/pterm"
 
 // Spinner wraps pterm's SpinnerPrinter for clean start/stop API.
+// Sequence uses only plain ASCII chars (- \ | /) so it renders correctly
+// on Windows Terminal Preview and the legacy conhost fallback.
 type Spinner struct {
 	sp *pterm.SpinnerPrinter
 }
@@ -10,7 +12,7 @@ type Spinner struct {
 // NewSpinner starts a spinner with the given message. Call Done or Fail to stop it.
 func NewSpinner(msg string) *Spinner {
 	sp, _ := pterm.DefaultSpinner.
-		WithSequence("⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷").
+		WithSequence("-", "\\", "|", "/"). // ASCII-only: safe on all Windows consoles
 		WithStyle(&pterm.Style{pterm.FgCyan}).
 		WithMessageStyle(&pterm.Style{pterm.FgWhite}).
 		Start(msg)

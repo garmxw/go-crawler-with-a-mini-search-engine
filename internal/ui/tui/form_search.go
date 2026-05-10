@@ -8,7 +8,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Config
+// tea is used for tea.Model, tea.Cmd, tea.KeyMsg, tea.Quit in Update().
+// newProgram() (defined in theme.go) wraps tea.NewProgram with Windows-safe options.
+
+// ── Config ────────────────────────────────────────────────────────────────────
 
 type SearchConfig struct {
 	Mode      string
@@ -22,12 +25,12 @@ type SearchConfig struct {
 	JSON      string
 	Depth     int
 	MaxPages  int
-	Delay     int
+	Delay     int // crawl delay in seconds (live mode), default 2
 	Storage   string
 	Submitted bool
 }
 
-//  Stage
+// ── Stage ─────────────────────────────────────────────────────────────────────
 
 type searchStage int
 
@@ -37,7 +40,7 @@ const (
 	stageDone                       // user confirmed — program exits
 )
 
-// Field indices
+// ── Field indices ─────────────────────────────────────────────────────────────
 
 const (
 	sfMode = iota
@@ -56,7 +59,7 @@ const (
 	sfSubmit
 )
 
-// Model
+// ── Model ─────────────────────────────────────────────────────────────────────
 
 type SearchFormModel struct {
 	modeSelect   Select
@@ -229,7 +232,7 @@ func (m SearchFormModel) prevField() int {
 	return fields[len(fields)-1]
 }
 
-//  Bubbletea
+// ── Bubbletea ─────────────────────────────────────────────────────────────────
 
 func (m SearchFormModel) Init() tea.Cmd { return nil }
 
@@ -246,7 +249,7 @@ func (m SearchFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
-	// Confirm stage: only waiting for y/enter or n/esc to go back
+	// ── Confirm stage: only waiting for y/enter or n/esc to go back ───────────
 	if m.stage == stageConfirm {
 		switch k {
 		case "enter", "y":
@@ -259,7 +262,7 @@ func (m SearchFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Form stage
+	// ── Form stage ────────────────────────────────────────────────────────────
 
 	// esc quits only when not in a text field
 	if k == "esc" && !m.isTextFocused() {
@@ -577,7 +580,7 @@ func renderSearchConfirmBox(cfg SearchConfig) string {
 	return styleConfirmBox.Render(sb.String())
 }
 
-// Result + Runner
+// ── Result + Runner ───────────────────────────────────────────────────────────
 
 func (m SearchFormModel) Result() SearchConfig {
 	urls := append([]string{}, m.urlsInput.Values...)
@@ -606,12 +609,13 @@ func (m SearchFormModel) Result() SearchConfig {
 	}
 }
 
-// RunSearchForm runs the form inline no alternate screen.
-// The banner is printed by main before this is called and stays visible above.
-// After this returns, main prints spinner + results below.
+// RunSearchForm runs the form inline (no alt screen).
+// Uses newProgram() which sets tea.WithInput(os.Stdin) + tea.WithOutput(os.Stderr)
+// so it works correctly on Windows Terminal Preview and all Unix terminals.
 func RunSearchForm(defaults SearchConfig) (SearchConfig, error) {
-	p := tea.NewProgram(NewSearchForm(defaults)) // no WithAltScreen
+	p := newProgram(NewSearchForm(defaults))
 	final, err := p.Run()
+	restoreConsoleInput() // restore stdin mode on Windows before crawler runs
 	if err != nil {
 		return SearchConfig{}, err
 	}

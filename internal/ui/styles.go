@@ -1,11 +1,11 @@
 // Package ui provides all terminal UI utilities for the crawler and search CLI.
-// It is completely isolated from business logic — no imports from internal packages
-// other than being imported BY them via the cmd layer.
+// Borders use NormalBorder/DoubleBorder only — RoundedBorder and ThickBorder
+// use characters (╭╮╰╯ / ┃) that crash the Windows legacy console host.
 package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-// Colour palette
+// ── Colour palette ────────────────────────────────────────────────────────────
 
 var (
 	colorCyan    = lipgloss.Color("#00D4FF")
@@ -22,7 +22,7 @@ var (
 	colorDark    = lipgloss.Color("#0D0D1A")
 )
 
-// Text styles
+// ── Text styles ───────────────────────────────────────────────────────────────
 
 var (
 	StyleTitle = lipgloss.NewStyle().
@@ -63,30 +63,35 @@ var (
 			Foreground(colorCyan)
 )
 
-// Box styles
+// ── Box styles ────────────────────────────────────────────────────────────────
+// NormalBorder  (┌─┐│└┘) — safe on all Windows console hosts.
+// DoubleBorder  (╔═╗║╚╝) — safe on all Windows console hosts.
+// RoundedBorder (╭─╮│╰╯) — NOT safe; omitted.
+// ThickBorder   (┏━┓┃┗┛) — NOT safe; replaced with DoubleBorder.
+
 var (
 	StyleBox = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(colorCyan).
 			Padding(0, 2)
 
 	StyleWarnBox = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(colorYellow).
 			Padding(0, 2)
 
 	StyleErrorBox = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(colorMagenta).
 			Padding(0, 2)
 
 	StyleSuccessBox = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(colorGreen).
 			Padding(0, 2)
 
 	StyleConfigBox = lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder()).
+			Border(lipgloss.DoubleBorder()).
 			BorderForeground(colorDimGray).
 			Padding(0, 2).
 			MarginTop(1)

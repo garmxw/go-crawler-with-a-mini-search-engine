@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"os"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Palette
+// ── Palette ───────────────────────────────────────────────────────────────────
 
 var (
 	clrCyan    = lipgloss.Color("#00D4FF")
@@ -23,18 +25,28 @@ var (
 
 const formWidth = 64
 
+// ── Borders ───────────────────────────────────────────────────────────────────
+// NormalBorder  uses ┌┐└┘─│  — supported by every Windows console host.
+// DoubleBorder  uses ╔╗╚╝═║  — supported by every Windows console host.
+// RoundedBorder uses ╭╮╰╯    — NOT supported by the legacy conhost fallback;
+// avoid it so Windows Terminal Preview doesn't crash.
+
 var (
+	// ── Form box ─────────────────────────────────────────────────────────────
+
 	styleFormBox = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).       // ┌─┐  safe on Windows
 			BorderForeground(clrCyan).
 			Padding(1, 3).
 			Width(formWidth)
 
 	styleFormBoxLocked = lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
+				Border(lipgloss.NormalBorder()).
 				BorderForeground(clrGray).
 				Padding(1, 3).
 				Width(formWidth)
+
+	// ── Typography ────────────────────────────────────────────────────────────
 
 	styleFormTitle = lipgloss.NewStyle().
 			Foreground(clrCyan).
@@ -81,6 +93,8 @@ var (
 			Foreground(clrRed).
 			Bold(true)
 
+	// ── Badges ────────────────────────────────────────────────────────────────
+
 	styleSelectedBadge = lipgloss.NewStyle().
 				Background(clrCyan).
 				Foreground(clrDark).
@@ -109,6 +123,8 @@ var (
 			Foreground(clrCyan).
 			Padding(0, 1)
 
+	// ── Buttons ───────────────────────────────────────────────────────────────
+
 	styleSubmitActive = lipgloss.NewStyle().
 				Background(clrGreen).
 				Foreground(clrDark).
@@ -126,8 +142,10 @@ var (
 			Bold(true).
 			Padding(0, 4)
 
+	// ── Confirm panel ─────────────────────────────────────────────────────────
+
 	styleConfirmBox = lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder()).
+			Border(lipgloss.DoubleBorder()).       // ╔═╗  safe on Windows
 			BorderForeground(clrCyan).
 			Padding(0, 2)
 
@@ -136,7 +154,8 @@ var (
 				Bold(true)
 )
 
-// renderKeyHints builds a compact key binding bar from key/desc pairs.
+// ── Key hint bar ──────────────────────────────────────────────────────────────
+
 func renderKeyHints(pairs ...string) string {
 	keyStyle := lipgloss.NewStyle().
 		Background(clrDimGray).
@@ -152,6 +171,32 @@ func renderKeyHints(pairs ...string) string {
 	return strings.Join(parts, "  ")
 }
 
+// ── Divider ───────────────────────────────────────────────────────────────────
+
 func divider() string {
-	return styleDim.Render(strings.Repeat("─", formWidth-8))
+	// Use plain hyphen-minus instead of Unicode ─ (U+2500) for Windows safety.
+	return styleDim.Render(strings.Repeat("-", formWidth-8))
+}
+
+// ── Program constructor ───────────────────────────────────────────────────────
+
+// newProgram creates a Bubbletea program compatible with Windows Terminal Preview
+// and all Unix terminals.
+//
+// tea.WithInput(os.Stdin): tells bubbletea to use the process stdin directly
+// instead of opening /dev/tty, which does not exist on Windows and causes an
+// immediate panic in Windows Terminal Preview.
+//
+// We do NOT use tea.WithOutput(os.Stderr): bubbletea putting stderr into raw
+// mode corrupts the slog output that the crawler also writes to stderr, and on
+// Windows Terminal Preview this causes colly's HTTP goroutines to fail silently,
+// resulting in 0 pages crawled. TUI writes to stdout (default) and slog writes
+// to stderr (default) — they never share a file descriptor.
+//
+// No WithAltScreen — the form stays visible in the normal scroll buffer.
+func newProgram(m tea.Model) *tea.Program {
+	return tea.NewProgram(
+		m,
+		tea.WithInput(os.Stdin),
+	)
 }

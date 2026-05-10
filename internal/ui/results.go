@@ -8,26 +8,28 @@ import (
 	"github.com/pterm/pterm"
 )
 
-// SearchResult mirrors models.SearchResult to keep the ui package dependency-free.
+// SearchResult mirrors models.SearchResult — keeps ui dependency-free.
 type SearchResult struct {
 	DocID int
 	Path  string
 	Score float64
 }
 
-// PrintSearchResults renders a ranked, scored results list with visual score bars.
+// PrintSearchResults renders a ranked, scored results list.
+// Bar uses '#' and '.' — safe on every Windows console host.
+// Block chars like █ and ░ are NOT in CP437 on all Windows versions.
 func PrintSearchResults(results []SearchResult, query string) {
 	if len(results) == 0 {
 		fmt.Println()
 		fmt.Println(StyleWarnBox.Render(
-			StyleWarn.Render("⚠  No results found for  ") +
+			StyleWarn.Render("[!!]  No results found for  ") +
 				StyleHighlight.Render("\""+query+"\""),
 		))
 		fmt.Println()
 		return
 	}
 
-	SectionHeader(fmt.Sprintf("Results for  \"%s\"  (%d found)", query, len(results)))
+	SectionHeader(fmt.Sprintf("Results for \"%s\" (%d found)", query, len(results)))
 
 	maxScore := results[0].Score
 	barWidth := 22
@@ -37,14 +39,11 @@ func PrintSearchResults(results []SearchResult, query string) {
 		Bold(true).
 		Width(8)
 
-	pathStyle := lipgloss.NewStyle().
-		Foreground(colorWhite)
-
+	pathStyle := lipgloss.NewStyle().Foreground(colorWhite)
 	dimStyle := StyleDim
 	idStyle := lipgloss.NewStyle().Foreground(colorGray)
 
 	for i, r := range results {
-		// Rank badge: gold/silver/bronze for top 3, cyan for the rest
 		var rankBg lipgloss.Color
 		switch i {
 		case 0:
@@ -65,7 +64,6 @@ func PrintSearchResults(results []SearchResult, query string) {
 			Width(4).
 			Align(lipgloss.Center)
 
-		// Score bar normalised to first result (max score)
 		normalised := r.Score / maxScore
 		filled := int(normalised * float64(barWidth))
 		if filled < 1 {
@@ -75,14 +73,15 @@ func PrintSearchResults(results []SearchResult, query string) {
 			filled = barWidth
 		}
 
-		barFilled := lipgloss.NewStyle().Foreground(colorGreen).Render(strings.Repeat("█", filled))
-		barEmpty := dimStyle.Render(strings.Repeat("░", barWidth-filled))
-		bar := barFilled + barEmpty
+		// '#' for filled, '.' for empty — safe on all Windows consoles
+		barFilled := lipgloss.NewStyle().Foreground(colorGreen).Render(strings.Repeat("#", filled))
+		barEmpty := dimStyle.Render(strings.Repeat(".", barWidth-filled))
+		bar := "[" + barFilled + barEmpty + "]"
 
-		// Trim long paths
+		// Trim long paths — use "..." instead of ellipsis char
 		displayPath := r.Path
 		if len(displayPath) > 55 {
-			displayPath = "…" + displayPath[len(displayPath)-52:]
+			displayPath = "..." + displayPath[len(displayPath)-52:]
 		}
 
 		fmt.Printf(
@@ -97,7 +96,7 @@ func PrintSearchResults(results []SearchResult, query string) {
 	}
 }
 
-// PrintCrawlSummary renders a box-table summary after a crawl finishes.
+// PrintCrawlSummary renders a summary table after a crawl finishes.
 func PrintCrawlSummary(totalPages int, storagePath string) {
 	SectionHeader("Crawl Summary")
 
@@ -116,7 +115,7 @@ func PrintCrawlSummary(totalPages int, storagePath string) {
 	fmt.Println()
 }
 
-// PrintIndexSummary renders a box-table summary after indexing finishes.
+// PrintIndexSummary renders a summary table after indexing finishes.
 func PrintIndexSummary(totalDocs int, uniqueTokens int) {
 	SectionHeader("Index Summary")
 
