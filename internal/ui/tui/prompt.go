@@ -14,7 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ── Palette (lipgloss for output colours only — never touches stdin mode) ─────
+// Palette (lipgloss for output colours only — never touches stdin mode)
 
 var (
 	clrCyan    = lipgloss.Color("#00D4FF")
@@ -49,7 +49,7 @@ var (
 			Padding(0, 2)
 )
 
-// ── Low-level helpers ─────────────────────────────────────────────────────────
+// Low-level helpers
 
 var scanner = bufio.NewScanner(os.Stdin)
 
@@ -160,7 +160,7 @@ func divider() {
 	fmt.Println(sDivider.Render(strings.Repeat("-", 56)))
 }
 
-// ── Config types ──────────────────────────────────────────────────────────────
+// Config types
 
 type SearchConfig struct {
 	Mode      string
@@ -190,7 +190,7 @@ type CrawlerConfig struct {
 	Submitted bool
 }
 
-// ── Search form ───────────────────────────────────────────────────────────────
+// Search form
 
 func RunSearchForm(d SearchConfig) (SearchConfig, error) {
 	if d.Limit <= 0 {
@@ -356,7 +356,7 @@ func printSearchConfirm(d SearchConfig) {
 	fmt.Println(sConfirmBox.Render(sb.String()))
 }
 
-// ── Crawler form ──────────────────────────────────────────────────────────────
+// Crawler form
 
 func RunCrawlerForm(d CrawlerConfig) (CrawlerConfig, error) {
 	if d.MaxPages <= 0 {
@@ -448,7 +448,7 @@ func printCrawlerConfirm(d CrawlerConfig) {
 	fmt.Println(sConfirmBox.Render(sb.String()))
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 
 func modeIdx(mode string) int {
 	for i, m := range []string{"local", "web", "live"} {

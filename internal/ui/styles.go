@@ -5,7 +5,7 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-// ── Colour palette ────────────────────────────────────────────────────────────
+// Colour palette
 
 var (
 	colorCyan    = lipgloss.Color("#00D4FF")
@@ -22,7 +22,7 @@ var (
 	colorDark    = lipgloss.Color("#0D0D1A")
 )
 
-// ── Text styles ───────────────────────────────────────────────────────────────
+// Text styles
 
 var (
 	StyleTitle = lipgloss.NewStyle().
@@ -63,7 +63,7 @@ var (
 			Foreground(colorCyan)
 )
 
-// ── Box styles ────────────────────────────────────────────────────────────────
+// Box styles
 // NormalBorder  (┌─┐│└┘) — safe on all Windows console hosts.
 // DoubleBorder  (╔═╗║╚╝) — safe on all Windows console hosts.
 // RoundedBorder (╭─╮│╰╯) — NOT safe; omitted.

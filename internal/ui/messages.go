@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ── Inline messages ───────────────────────────────────────────────────────────
+// Inline messages
 // Symbols use only characters in Windows-1252 / CP437 that every console host
 // can render. Avoided: ✔ ✘ ⚠ ◆ ▸ ⚙ │ — ─ (replaced with ASCII equivalents).
 
@@ -32,7 +32,7 @@ func Dim(msg string) {
 	fmt.Println(StyleDim.Render("        " + msg))
 }
 
-// ── Boxed messages ────────────────────────────────────────────────────────────
+// Boxed messages
 
 func SuccessBox(msg string) {
 	fmt.Println()
@@ -58,7 +58,7 @@ func InfoBox(msg string) {
 	fmt.Println()
 }
 
-// ── Section header ────────────────────────────────────────────────────────────
+// Section header
 
 func SectionHeader(title string) {
 	style := lipgloss.NewStyle().
@@ -75,7 +75,7 @@ func SectionHeader(title string) {
 	fmt.Println()
 }
 
-// ── Config panel ──────────────────────────────────────────────────────────────
+// Config panel
 
 type ConfigRow struct {
 	Key   string
@@ -114,7 +114,7 @@ func PrintConfigPanel(title string, rows []ConfigRow) {
 	fmt.Println(StyleConfigBox.Render(sb.String()))
 }
 
-// ── Mode badge ────────────────────────────────────────────────────────────────
+// Mode badge
 
 func PrintModeBadge(mode string) {
 	var bg lipgloss.Color
@@ -148,7 +148,7 @@ func PrintModeBadge(mode string) {
 	fmt.Println()
 }
 
-// ── Single stat row ───────────────────────────────────────────────────────────
+// Single stat row
 
 func PrintStat(label string, value interface{}) {
 	lStyle := lipgloss.NewStyle().
@@ -174,7 +174,7 @@ func PrintStat(label string, value interface{}) {
 	fmt.Println("  " + lStyle.Render(label) + vStyle.Render(vStr))
 }
 
-// ── Divider ───────────────────────────────────────────────────────────────────
+// Divider
 
 func Divider() {
 	fmt.Println(StyleDim.Render(strings.Repeat("-", 64)))
