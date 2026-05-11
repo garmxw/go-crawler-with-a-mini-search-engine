@@ -1,4 +1,4 @@
-![GO CRAWLER - TF-IDF powered mini search engine](./assets/images/go_crawler.png)
+![GO CRAWLER - TF-IDF powered mini search engine](./assets/images/go_search_logo.png)
 
 # Go Crawler + Mini Search Engine
 
