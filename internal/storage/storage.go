@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-
+// Page represents a web page stored in the storage.
 type Page struct {
 	ID int
 	URL string
@@ -29,15 +29,21 @@ func NewStorage(path string) *Storage {
 	os.MkdirAll(path, os.ModePerm)
 
 	return &Storage{
+		// mu is the mutex used to protect concurrent access to the storage and ensure data integrity. it can be unused here because go
+		// does not require explicit locking for simple read/write operations on struct fields.
+		// i just want it to be explicit for learning purposes.
 		mu:     &sync.Mutex{},
+		// nextID is the next available ID for a page.
 		nextID: 1,
 		path:   path,
 	}
 }
 
 func (s *Storage) SavePage(page Page) int {
+	// Lock the mutex to ensure exclusive access to the storage.
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Assign the next available ID and increment the nextID counter.
 	page.ID = s.nextID
 	s.nextID++
 	filename := filepath.Join(
