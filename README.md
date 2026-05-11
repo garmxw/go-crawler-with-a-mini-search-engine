@@ -1,3 +1,5 @@
+![GO CRAWLER - TF-IDF powered mini search engine](./assets/go_crawler.png)
+
 # Go Crawler + Mini Search Engine
 
 A modular web crawler and mini search engine written in Go.
