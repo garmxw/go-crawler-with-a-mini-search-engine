@@ -12,10 +12,10 @@ import (
 )
 
 func main() {
-	// 1. Banner — prints once and stays on screen above the form
+	// 1. Banner prints once and stays on screen above the form
 	ui.PrintSearchBanner()
 
-	// 2. Interactive form — renders inline below the banner
+	// 2. Interactive form renders inline below the banner
 	cfg, err := tui.RunSearchForm(tui.SearchConfig{
 		Mode:     "local",
 		Lang:     "english",
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// 3. Confirm panel already printed inside the TUI (below the locked form).
-	//    Now run the actual search logic — spinner + results print here below.
+	//    Now run the actual search logic spinner + results print here below.
 	fmt.Println()
 
 	var results []models.SearchResult
@@ -92,7 +92,7 @@ func main() {
 		results = results[:cfg.Limit]
 	}
 
-	// Display results — prints below everything
+	// Display results prints below everything
 	uiResults := make([]ui.SearchResult, len(results))
 	for i, r := range results {
 		uiResults[i] = ui.SearchResult{
