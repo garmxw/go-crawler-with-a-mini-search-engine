@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	// 1. Banner — prints once and stays on screen above the form
+	// 1. Banner prints once and stays on screen above the form
 	ui.PrintCrawlerBanner()
 
-	// 2. Interactive form — renders inline below the banner
+	// 2. Interactive form renders inline below the banner
 	cfg, err := tui.RunCrawlerForm(tui.CrawlerConfig{
 		MaxPages: 3,
 		Delay:    2,
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// 3. Confirm panel already printed inside the TUI (below the locked form).
-	//    Now run the actual crawler — spinner + result print here below everything.
+	// Now run the actual crawler spinner + result print here below everything.
 	fmt.Println()
 	spin := ui.NewSpinner("Crawling pages...")
 
